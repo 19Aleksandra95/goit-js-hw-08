@@ -1,41 +1,44 @@
-import throttle from 'lodash.throttle';
-const formEl = document.querySelector('.feedback-form');
-console.log(formEl);
-const STORAGE_KEY = 'feedback-form-state';
-const formData = {};
+import throttle from "lodash.throttle";
 
-updateForm();
+const STORAGE_KEY = "feedback-form-state";
 
-formEl.addEventListener('input', throttle(onFormInput, 500));
-formEl.addEventListener('submit', onFormSubmit);
+const refs = {
+  form: document.querySelector(".feedback-form"),
+  textarea: document.querySelector(".feedback-form textarea"),
+  input: document.querySelector("input"),
+};
 
-function onFormInput(e) {
+let formData = {
+  email: "",
+  message: "",
+};
+
+populateTextarea();
+
+refs.form.addEventListener("input", throttle(onTextareaInput, 500));
+refs.form.addEventListener("submit", handleSubmit);
+
+function onTextareaInput(e) {
   formData[e.target.name] = e.target.value;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  const stringifiedData = JSON.stringify(formData);
+  localStorage.setItem(STORAGE_KEY, stringifiedData);
+}
+
+function handleSubmit(e) {
+  e.preventDefault();
+  localStorage.removeItem(STORAGE_KEY);
+  e.currentTarget.reset();
   console.log(formData);
 }
 
-function onFormSubmit(e) {
-  e.preventDefault();
-  const {
-    elements: { email, message },
-  } = e.target;
-
-  if (email.value === '' || message.value === '') {
-    return window.alert('Please fill in all the fields!');
-  }
-  console.log({ Email: email.value, Message: message.value });
-  formEl.reset();
-  localStorage.removeItem(STORAGE_KEY);
-}
-
-function updateForm() {
-  if (localStorage.getItem(STORAGE_KEY) === null) {
+function populateTextarea() {
+  const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if (!savedData) {
     return;
   }
-  const savedForm = JSON.parse(localStorage.getItem(STORAGE_KEY));
-  Object.entries(savedForm).forEach(([name, value]) => {
-    formData[name] = value;
-    formEl.elements[name].value = value;
-  });
+
+  const { email, message } = savedData;
+  refs.textarea.value = message || "";
+  refs.input.value = email || "";
+  formData = { email: email || "", message: message || "" };
 }
